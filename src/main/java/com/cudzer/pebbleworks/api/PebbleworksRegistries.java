@@ -5,26 +5,22 @@ import com.cudzer.pebbleworks.api.jobs.IPebbleJobFactory;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.registries.NewRegistryEvent;
 import net.neoforged.neoforge.registries.RegistryBuilder;
-import net.neoforged.neoforge.registries.RegistryManager;
-
-import java.util.function.Supplier;
 
 public class PebbleworksRegistries {
     public static final ResourceKey<Registry<IPebbleJobFactory>> JOB_FACTORIES_KEY =
-            ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(PebbleworksMod.MODID, "job_factories"));
+            ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath("pebbleworks", "job_factories"));
 
-    public static final Registry<IPebbleJobFactory> JOB_FACTORIES =
-            new RegistryBuilder<>(JOB_FACTORIES_KEY).create();
-
-    public static Supplier<Registry<IPebbleJobFactory>> getJobFactoryRegistry() {
-        return () -> JOB_FACTORIES;
-    }
-
-    public static void register(NewRegistryEvent event) {
-
-    }
+    public static final Registry<IPebbleJobFactory> JOB_FACTORIES_REGISTRY = new RegistryBuilder<>(JOB_FACTORIES_KEY)
+            // If you want to enable integer id syncing, for networking.
+            // These should only be used in networking contexts, for example in packets or purely networking-related NBT data.
+            .sync(true)
+            // The default key. Similar to minecraft:air for blocks. This is optional.
+            .defaultKey(ResourceLocation.fromNamespaceAndPath("pebbleworks", "empty"))
+            // Effectively limits the max count. Generally discouraged, but may make sense in settings such as networking.
+            .maxId(256)
+            // Build the registry.
+            .create();
 
     /**
      * Call this from your mod's setup event (e.g., FMLCommonSetupEvent)

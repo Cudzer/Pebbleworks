@@ -1,5 +1,7 @@
 package com.cudzer.pebbleworks;
 
+import com.cudzer.pebbleworks.api.PebbleworksRegistries;
+import com.cudzer.pebbleworks.core.PW_DataSerializers;
 import com.cudzer.pebbleworks.data.PebbleworksJobManager;
 import com.cudzer.pebbleworks.data.PebbleworksTypeManager;
 import com.cudzer.pebbleworks.entity.PebbleEntity;
@@ -23,6 +25,8 @@ import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.registries.NewRegistryEvent;
+import net.neoforged.neoforge.registries.RegisterEvent;
 import org.slf4j.Logger;
 
 @Mod(PebbleworksMod.MODID)
@@ -36,17 +40,22 @@ public class PebbleworksMod {
     public PebbleworksMod(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::registerEntityAttributes);
+        modEventBus.addListener(this::onRegister);
 
         PW_Blocks.register(modEventBus);
         PW_Items.register(modEventBus);
         PW_Entities.register(modEventBus);
         PW_Items.CREATIVE_MODE_TABS.register(modEventBus);
 
-        NeoForge.EVENT_BUS.register(this);
+        //NeoForge.EVENT_BUS.register(this);
         modEventBus.addListener(this::addCreative);
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
 
         NeoForge.EVENT_BUS.addListener(this::onAddReloadListeners);
+    }
+
+    public void onRegister(final RegisterEvent event) {
+
     }
 
     public void registerEntityAttributes(EntityAttributeCreationEvent event) {

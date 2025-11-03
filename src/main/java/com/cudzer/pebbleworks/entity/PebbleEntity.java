@@ -1,165 +1,120 @@
 package com.cudzer.pebbleworks.entity;
 
-import com.cudzer.pebbleworks.PebbleworksMod;
-import com.cudzer.pebbleworks.api.PebbleworksRegistries;
-import com.cudzer.pebbleworks.api.data.PebbleJobDefinition;
-import com.cudzer.pebbleworks.api.data.PebbleType;
-import com.cudzer.pebbleworks.api.jobs.IPebbleJob;
-import com.cudzer.pebbleworks.api.jobs.IPebbleJobFactory;
+
+import com.cudzer.pebbleworks.entity.ai.pebble.PebbleConverseGoal;
+import net.minecraft.Util;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.*;
+import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class PebbleEntity extends PathfinderMob implements GeoEntity {
+public class PebbleEntity extends Animal implements GeoEntity {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    private static final EntityDataAccessor<String> PEBBLE_TYPE_ID_STRING =
-            SynchedEntityData.defineId(PebbleEntity.class, EntityDataSerializers.STRING);
-    private static final EntityDataAccessor<String> CURRENT_JOB_ID_STRING =
-            SynchedEntityData.defineId(PebbleEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Integer> VARIANT =
+            SynchedEntityData.defineId(PebbleEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_CONVERSING =
+            SynchedEntityData.defineId(PebbleEntity.class, EntityDataSerializers.BOOLEAN);
 
-    @Nullable
-    private PebbleType pebbleType;
-    @Nullable
-    private IPebbleJob currentJobLogic;
-
-    public PebbleEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
+    public PebbleEntity(EntityType<? extends Animal> entityType, Level level) {
         super(entityType, level);
     }
 
     @Override
     protected void defineSynchedData(SynchedEntityData.@NotNull Builder builder) {
         super.defineSynchedData(builder);
-        builder.define(PEBBLE_TYPE_ID_STRING, PebbleworksMod.MODID + ":missing");
-        builder.define(CURRENT_JOB_ID_STRING, PebbleworksMod.MODID + ":idle");
+        builder.define(VARIANT, 0);
+        builder.define(IS_CONVERSING, false);
+    }
+
+    @Override
+    public SpawnGroupData finalizeSpawn(@NotNull ServerLevelAccessor level, @NotNull DifficultyInstance difficulty,
+                                        @NotNull MobSpawnType spawnType, @Nullable SpawnGroupData spawnGroupData) {
+        PebbleVariant variant = Util.getRandom(PebbleVariant.values(), this.random);
+        this.setVariant(variant);
+        return super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
+    }
+
+    @Override
+    public @Nullable AgeableMob getBreedOffspring(@NotNull ServerLevel serverLevel, @NotNull AgeableMob ageableMob) {
+        return null;
     }
 
     @Override
     protected void registerGoals() {
         super.registerGoals();
+        this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(8, new WaterAvoidingRandomStrollGoal(this, 1.0D));
-        this.goalSelector.addGoal(9, new LookAtPlayerGoal(this, Player.class, 6.0F));
-        this.goalSelector.addGoal(10, new RandomLookAroundGoal(this));
-    }
-
-    @Nullable
-    public PebbleType getPebbleType() {
-        if (this.pebbleType == null) {
-            this.pebbleType = PebbleworksMod.PEBBLEWORKS_TYPE_MANAGER.getType(getPebbleTypeId());
-        }
-
-        if (this.pebbleType == null) {
-            PebbleworksMod.LOGGER.warn("Pebble entity {} has missing type {}!", getUUID(), getPebbleTypeId());
-            return null;
-        }
-        return this.pebbleType;
-    }
-
-    public ResourceLocation getPebbleTypeId() {
-        return ResourceLocation.parse(this.entityData.get(PEBBLE_TYPE_ID_STRING));
-    }
-
-    public void setPebbleType(ResourceLocation id) {
-        this.entityData.set(PEBBLE_TYPE_ID_STRING, id.toString());
-        this.pebbleType = null;
-
-        if (!level().isClientSide) {
-            // ... (apply stats logic) ...
-            return;
-        }
-    }
-
-    public void setJob(ResourceLocation jobId) {
-        if (!level().isClientSide) {
-            this.entityData.set(CURRENT_JOB_ID_STRING, jobId.toString());
-            updateJobLogic();
-        }
-    }
-
-    public ResourceLocation getCurrentJobId() {
-        return ResourceLocation.parse(this.entityData.get(CURRENT_JOB_ID_STRING));
-    }
-
-    private void updateJobLogic() {
-        if (level().isClientSide) return; // SERVER ONLY
-
-        // 1. Clear old job AI
-        if (this.currentJobLogic != null) {
-            this.currentJobLogic.onStop();
-            this.currentJobLogic.getAIGoals().forEach(this.goalSelector::removeGoal);
-            this.currentJobLogic = null;
-        }
-
-        // 2. Get definition for new job from our 'main' manager
-        PebbleJobDefinition jobDef = PebbleworksMod.PEBBLEWORKS_JOB_MANAGER.getJobDefinition(getCurrentJobId());
-        if (jobDef == null || jobDef.jobLogicId == null) {
-            return; // Job is "idle" or invalid
-        }
-
-        // 3. Get the Job Factory from the PUBLIC API REGISTRY
-        IPebbleJobFactory factory = PebbleworksRegistries.JOB_FACTORIES.get(
-                ResourceLocation.tryParse(jobDef.jobLogicId)
-        );
-
-        // 4. If factory exists, create new job logic and add its AI goals
-        if (factory != null) {
-            // We pass 'this' (the PebbleEntity) to the factory
-            this.currentJobLogic = factory.create(this, jobDef);
-            this.currentJobLogic.onStart();
-            this.currentJobLogic.getAIGoals().forEach(g -> this.goalSelector.addGoal(1, g)); // Add with high priority
-        } else {
-            PebbleworksMod.LOGGER.error("Missing job factory for ID: {}", jobDef.jobLogicId);
-        }
+        this.goalSelector.addGoal(10, new PebbleConverseGoal(this, 8.0F, 0.02F, 1.0D, 2.0D));
+        this.goalSelector.addGoal(11, new LookAtPlayerGoal(this, Player.class, 6.0F));
+        this.goalSelector.addGoal(12, new RandomLookAroundGoal(this));
     }
 
     @Override
     public void aiStep() {
         super.aiStep();
-        // Tick the current job if it exists
-        if (!level().isClientSide && this.currentJobLogic != null) {
-            this.currentJobLogic.tick();
-            if (this.currentJobLogic.isFinished()) {
-                // Job is done, go back to idle
-                setJob(ResourceLocation.fromNamespaceAndPath(PebbleworksMod.MODID, "idle"));
-            }
-        }
+    }
+
+    private int getTypeVariant() {
+        return this.entityData.get(VARIANT);
+    }
+
+    public PebbleJobType getJob(){
+        return PebbleJobType.NONE;
+    }
+
+    public PebbleVariant getVariant() {
+        return PebbleVariant.byId(this.getTypeVariant() & 255);
+    }
+
+    private void setVariant(PebbleVariant variant) {
+        this.entityData.set(VARIANT, variant.getId() & 255);
+    }
+
+    public boolean isConversing(){
+        return this.entityData.get(IS_CONVERSING);
+    }
+
+    public void setConversing(boolean value){
+        this.entityData.set(IS_CONVERSING, value);
     }
 
     @Override
     public void addAdditionalSaveData(@NotNull CompoundTag compound) {
         super.addAdditionalSaveData(compound);
-        compound.putString("PebbleType", getPebbleTypeId().toString());
-        compound.putString("CurrentJob", getCurrentJobId().toString());
+        compound.putInt("Variant", this.getTypeVariant());
     }
 
     @Override
     public void readAdditionalSaveData(@NotNull CompoundTag compound) {
         super.readAdditionalSaveData(compound);
-        if (compound.contains("PebbleType")) {
-            setPebbleType(ResourceLocation.parse(compound.getString("PebbleType")));
-        }
-        if (compound.contains("CurrentJob")) {
-            // Set the job. This will trigger updateJobLogic() on the server.
-            setJob(ResourceLocation.parse(compound.getString("CurrentJob")));
-        }
+        this.entityData.set(VARIANT, compound.getInt("Variant"));
+    }
+
+    @Override
+    public boolean isFood(@NotNull ItemStack itemStack) {
+        return false;
     }
 
     @Override
@@ -169,9 +124,11 @@ public class PebbleEntity extends PathfinderMob implements GeoEntity {
 
     private <E extends GeoEntity> PlayState predicate(AnimationState<E> event) {
         if (event.isMoving()) {
-            event.getController().setAnimation(RawAnimation.begin().thenLoop("animation.pebble.walk"));
-        } else {
-            event.getController().setAnimation(RawAnimation.begin().thenLoop("animation.pebble.idle"));
+            event.getController().setAnimation(RawAnimation.begin().thenLoop("animation.pebble_entity.walk"));
+        }else if (isConversing()) {
+            event.getController().setAnimation(RawAnimation.begin().thenLoop("animation.pebble_entity.converse"));
+        }else  {
+            event.getController().setAnimation(RawAnimation.begin().thenLoop("animation.pebble_entity.idle"));
         }
         return PlayState.CONTINUE;
     }
@@ -184,7 +141,7 @@ public class PebbleEntity extends PathfinderMob implements GeoEntity {
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 20.0)
-                .add(Attributes.MOVEMENT_SPEED, 0.7)
+                .add(Attributes.MOVEMENT_SPEED, 0.3)
                 .add(Attributes.ATTACK_DAMAGE, 4.0);
     }
 }
