@@ -1,5 +1,14 @@
 {
   "itemGroup.pebbleworks": "Pebbleworks",
 
-  "entity.pebbleworks.pebble": "Pebble"
+  "item.pebbleworks.pebble_item": "Pebble Pod",
+
+  "entity.pebbleworks.pebble": "Pebble",
+
+  "block.pebbleworks.pebble_station": "Pebble Station",
+
+  "tooltip.pebbleworks.health": "Health: %s",
+  "tooltip.pebbleworks.job": "Job: %s",
+  "tooltip.pebbleworks.variant": "Variant: %s",
+  "tooltip.pebbleworks.empty": "Empty"
 }

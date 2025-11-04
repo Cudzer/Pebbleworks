@@ -2,6 +2,7 @@ package com.cudzer.pebbleworks.data;
 
 import com.cudzer.pebbleworks.PebbleworksMod;
 import com.cudzer.pebbleworks.api.data.PebbleType;
+import com.cudzer.pebbleworks.core.PW_Logger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -35,12 +36,12 @@ public class PebbleworksTypeManager extends SimpleJsonResourceReloadListener {
                 PebbleType type = GSON.fromJson(entry.getValue(), PebbleType.class);
                 loadedTypes.put(id, type);
             } catch (Exception e) {
-                PebbleworksMod.LOGGER.error("Could not parse pebble type: {}", id, e);
+                PW_Logger.error("Could not parse pebble type: " + id + " Exception: " + e);
             }
         }
 
         pebbleTypes = loadedTypes;
-        PebbleworksMod.LOGGER.info("Loaded {} pebble types.", pebbleTypes.size());
+        PW_Logger.info("Loaded " + pebbleTypes.size() + " pebble types.");
     }
 
     public PebbleType getType(ResourceLocation id) {

@@ -12,7 +12,7 @@ public class Pebble {
     public static final int MAX_POINTS_PER_AFFINITY = 252;
     public static final int MAX_TOTAL_AFFINITY_POINTS = 510;
 
-    private Map<ResourceLocation, Integer> affinityPoints;
+    private final Map<ResourceLocation, Integer> affinityPoints;
     private int totalAffinityPoints;
     private int level;
     private int experience;

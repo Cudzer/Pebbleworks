@@ -14,5 +14,6 @@ public class PW_ItemModelProvider extends ItemModelProvider {
     @Override
     protected void registerModels() {
         withExistingParent(PW_Items.PEBBLE_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(PW_Items.PEBBLE_ITEM.getId().getPath(), mcLoc("item/generated"));
     }
 }

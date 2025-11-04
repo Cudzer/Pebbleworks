@@ -2,6 +2,7 @@ package com.cudzer.pebbleworks.api;
 
 import com.cudzer.pebbleworks.PebbleworksMod;
 import com.cudzer.pebbleworks.api.jobs.IPebbleJobFactory;
+import com.cudzer.pebbleworks.core.PW_Logger;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -39,6 +40,6 @@ public class PebbleworksRegistries {
         );
         */
 
-        PebbleworksMod.LOGGER.info("Pebble Job Factories are ready for registration.");
+        PW_Logger.info("Pebble Job Factories are ready for registration.");
     }
 }

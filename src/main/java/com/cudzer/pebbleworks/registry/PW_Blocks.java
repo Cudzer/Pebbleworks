@@ -1,16 +1,9 @@
 package com.cudzer.pebbleworks.registry;
 
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredRegister;
-
-import static com.cudzer.pebbleworks.PebbleworksMod.MODID;
+import com.cudzer.pebbleworks.core.PW_Registries;
+import net.minecraft.world.level.block.Block;
+import net.neoforged.neoforge.registries.DeferredBlock;
 
 public class PW_Blocks {
-    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
-
-    //public static final DeferredBlock<Block> EXAMPLE_BLOCK = BLOCKS.registerSimpleBlock("example_block", BlockBehaviour.Properties.of().mapColor(MapColor.STONE));
-
-    public static void register(IEventBus modEventBus){
-        BLOCKS.register(modEventBus);
-    }
+    public static final DeferredBlock<Block> PEBBLE_STATION = PW_Registries.BLOCKS.registerSimpleBlock("pebble_station");
 }

@@ -1,5 +1,6 @@
 package com.cudzer.pebbleworks.datagen;
 
+import com.cudzer.pebbleworks.core.PW_Registries;
 import com.cudzer.pebbleworks.registry.PW_Blocks;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
@@ -25,7 +26,7 @@ public class PW_BlockLootTableProvider extends BlockLootSubProvider {
     }
     @Override
     protected void generate() {
-
+        dropSelf(PW_Blocks.PEBBLE_STATION.get());
     }
 
     protected LootTable.Builder createMultipleOreDrops(Block pBlock, Item item, float minDrops, float maxDrops) {
@@ -38,6 +39,6 @@ public class PW_BlockLootTableProvider extends BlockLootSubProvider {
 
     @Override
     protected Iterable<Block> getKnownBlocks() {
-        return PW_Blocks.BLOCKS.getEntries().stream().map(Holder::value)::iterator;
+        return PW_Registries.BLOCKS.getEntries().stream().map(Holder::value)::iterator;
     }
 }

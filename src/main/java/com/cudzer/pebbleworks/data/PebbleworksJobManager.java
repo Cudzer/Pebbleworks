@@ -2,6 +2,7 @@ package com.cudzer.pebbleworks.data;
 
 import com.cudzer.pebbleworks.PebbleworksMod;
 import com.cudzer.pebbleworks.api.data.PebbleJobDefinition;
+import com.cudzer.pebbleworks.core.PW_Logger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -33,12 +34,12 @@ public class PebbleworksJobManager extends SimpleJsonResourceReloadListener {
                 PebbleJobDefinition job = GSON.fromJson(entry.getValue(), PebbleJobDefinition.class);
                 loadedJobs.put(id, job);
             } catch (Exception e) {
-                PebbleworksMod.LOGGER.error("Could not parse pebble job: {}", id, e);
+                PW_Logger.error("Could not parse pebble job: " + id + " Exception: " + e);
             }
         }
 
         jobDefinitions = loadedJobs;
-        PebbleworksMod.LOGGER.info("Loaded {} pebble jobs.", jobDefinitions.size());
+        PW_Logger.info("Loaded " + jobDefinitions.size() + " pebble jobs.");
     }
 
     public PebbleJobDefinition getJobDefinition(ResourceLocation id) {
